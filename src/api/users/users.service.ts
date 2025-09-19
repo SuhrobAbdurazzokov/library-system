@@ -23,6 +23,8 @@ import { Response } from 'express';
 import { SignUpDto } from './dto/signup.dto';
 import { Borrow } from 'src/core/entity/borrow.entity';
 import type { BorrowRepository } from 'src/core/repository/borrow.repository';
+import { ILike } from 'typeorm';
+import { QueryDto } from 'src/common/dto/query.dto';
 
 @Injectable()
 export class UsersService
@@ -141,7 +143,61 @@ export class UsersService
     return getSuccessRes({ accessToken });
   }
 
-    async findTopUsers() {
+  async findAllWithRoleFilter(currentUser: Users, queryDto?: QueryDto) {
+    const { query, search } = queryDto || {};
+
+    const allowedFields = ['email', 'fullName', 'role'];
+
+    if (search && !allowedFields.includes(search)) {
+      throw new BadRequestException(
+        `Search field "${search}" mavjud emas. Mavajud fiedls: ${allowedFields.join(', ')}`,
+      );
+    }
+
+    let where: any = {};
+
+    if (currentUser.role === UsersRole.SUPERADMIN) {
+    } else if (currentUser.role === UsersRole.ADMIN) {
+      where.role = UsersRole.LIBRARIAN;
+    } else if (currentUser.role === UsersRole.LIBRARIAN) {
+      where.role = UsersRole.READER;
+    }
+
+    if (query && search) {
+      if (search === 'role') {
+        const normalizedRole = query.toUpperCase();
+
+        if (!Object.values(UsersRole).includes(normalizedRole as UsersRole)) {
+          throw new BadRequestException(
+            `Bunday role "${query}" mavjud emas. Mavjud fields: ${Object.values(UsersRole).join(', ')}`,
+          );
+        }
+
+        where = {
+          ...where,
+          role: normalizedRole as UsersRole,
+        };
+      } else {
+        where = {
+          ...where,
+          [search]: ILike(`%${query}%`),
+        };
+      }
+    }
+
+    return this.usersRepo.find({
+      where,
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        role: true,
+      },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findTopUsers() {
     return this.borrowRepo
       .createQueryBuilder('borrow')
       .leftJoin('borrow.user', 'user')
@@ -154,6 +210,4 @@ export class UsersService
       .limit(5)
       .getRawMany();
   }
-
-
 }

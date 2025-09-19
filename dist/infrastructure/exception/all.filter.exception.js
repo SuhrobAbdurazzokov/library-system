@@ -18,7 +18,6 @@ let AllExceptionFilter = class AllExceptionFilter {
         let errorMessage = 'Internal server error';
         if (exception instanceof common_1.HttpException) {
             const exceptionResponse = exception.getResponse();
-            console.log('Serverda xatolik:\n', exceptionResponse);
             if (typeof exceptionResponse === 'string') {
                 errorMessage = exceptionResponse;
             }

@@ -8,7 +8,12 @@ import {
   FindManyOptions,
 } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity.js';
-import { IResponse } from '../interface/resonse.interface';
+import {
+  IFindOptions,
+  IResponse,
+  IResponsePagination,
+} from '../interface/resonse.interface';
+import { RepositoryPager } from '../pagination/repositoryPager';
 
 export class BaseService<CreateDto, UpdateDto, Entity extends { id: string }> {
   constructor(private readonly repository: Repository<Entity>) {}
@@ -26,6 +31,12 @@ export class BaseService<CreateDto, UpdateDto, Entity extends { id: string }> {
   async findAll(where?: FindManyOptions<Entity>): Promise<IResponse> {
     const data = await this.repository.find(where);
     return getSuccessRes(data);
+  }
+
+  async findAllWithPagination(
+    options?: IFindOptions<Entity>,
+  ): Promise<IResponsePagination> {
+    return await RepositoryPager.findAll(this.getRepository, options);
   }
 
   async findOneById(

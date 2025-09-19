@@ -9,32 +9,46 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.QueryDto = void 0;
+exports.QueryPaginationDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
+const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
-class QueryDto {
+class QueryPaginationDto {
     query;
-    search;
+    page;
+    limit;
 }
-exports.QueryDto = QueryDto;
+exports.QueryPaginationDto = QueryPaginationDto;
 __decorate([
-    (0, swagger_1.ApiProperty)({
+    (0, swagger_1.ApiPropertyOptional)({
         type: 'string',
-        description: 'row',
-        required: false,
+        example: 'model',
+        description: 'Query for search',
     }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
-], QueryDto.prototype, "query", void 0);
+], QueryPaginationDto.prototype, "query", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({
+    (0, swagger_1.ApiPropertyOptional)({
         type: 'string',
-        description: 'column',
-        required: false,
+        example: '1',
+        description: 'page',
     }),
-    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_transformer_1.Type)(() => Number),
     (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", String)
-], QueryDto.prototype, "search", void 0);
-//# sourceMappingURL=query.dto.js.map
+    __metadata("design:type", Number)
+], QueryPaginationDto.prototype, "page", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        type: 'string',
+        example: '10',
+        description: 'limit',
+    }),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], QueryPaginationDto.prototype, "limit", void 0);
+//# sourceMappingURL=pagination.dto.js.map

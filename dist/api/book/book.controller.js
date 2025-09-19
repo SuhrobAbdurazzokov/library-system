@@ -24,6 +24,7 @@ const roles_guard_1 = require("../../common/guard/roles.guard");
 const swagger_1 = require("@nestjs/swagger");
 const query_dto_1 = require("../../common/dto/query.dto");
 const typeorm_1 = require("typeorm");
+const pagination_dto_1 = require("../../common/dto/pagination.dto");
 let BookController = class BookController {
     bookService;
     constructor(bookService) {
@@ -32,16 +33,19 @@ let BookController = class BookController {
     create(createBookDto) {
         return this.bookService.create(createBookDto);
     }
-    findAllWithFilter(queryDto) {
+    async findAllWithFilter(queryDto) {
         const { query, search } = queryDto;
-        const where = query
-            ? {
+        const allowedFields = ['title', 'author'];
+        if (search && !allowedFields.includes(search)) {
+            throw new common_1.BadRequestException(`Search field "${search}" mavjud emas. Mavjud fields: ${allowedFields.join(', ')}`);
+        }
+        let where = { available: true };
+        if (search && query) {
+            where = {
+                ...where,
                 [search]: (0, typeorm_1.ILike)(`%${query}%`),
-                available: true,
-            }
-            : {
-                available: true,
             };
+        }
         return this.bookService.findAll({
             where,
             select: {
@@ -53,16 +57,24 @@ let BookController = class BookController {
             order: { createdAt: 'DESC' },
         });
     }
-    findAll() {
-        return this.bookService.findAll({
-            where: { available: true },
+    findAllWithPagination(queryDto) {
+        const { query, page, limit } = queryDto;
+        const where = query
+            ? { title: (0, typeorm_1.ILike)(`%${query}%`) }
+            : {
+                author: (0, typeorm_1.ILike)(`%${query}%`),
+            };
+        return this.bookService.findAllWithPagination({
+            where,
+            order: { createdAt: 'DESC' },
             select: {
                 id: true,
                 title: true,
                 author: true,
                 publishedYear: true,
             },
-            order: { createdAt: 'DESC' },
+            skip: page,
+            take: limit,
         });
     }
     findTopBooks() {
@@ -88,6 +100,7 @@ let BookController = class BookController {
 };
 exports.BookController = BookController;
 __decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'create book' }),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
     (0, role_decorator_1.Roles)(users_role_enum_1.UsersRole.SUPERADMIN, users_role_enum_1.UsersRole.ADMIN, users_role_enum_1.UsersRole.LIBRARIAN),
     (0, common_1.Post)(),
@@ -99,21 +112,25 @@ __decorate([
 __decorate([
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
     (0, role_decorator_1.Roles)(users_role_enum_1.UsersRole.SUPERADMIN, users_role_enum_1.UsersRole.ADMIN, users_role_enum_1.UsersRole.LIBRARIAN, users_role_enum_1.UsersRole.READER),
-    (0, common_1.Get)('filter'),
+    (0, swagger_1.ApiOperation)({ summary: 'find all books with filter' }),
+    (0, common_1.Get)(),
     __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [query_dto_1.QueryDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], BookController.prototype, "findAllWithFilter", null);
 __decorate([
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
     (0, role_decorator_1.Roles)(users_role_enum_1.UsersRole.SUPERADMIN, users_role_enum_1.UsersRole.ADMIN, users_role_enum_1.UsersRole.LIBRARIAN, users_role_enum_1.UsersRole.READER),
-    (0, common_1.Get)(),
+    (0, swagger_1.ApiOperation)({ summary: 'find all books with pagination' }),
+    (0, common_1.Get)('pagination'),
+    __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [pagination_dto_1.QueryPaginationDto]),
     __metadata("design:returntype", void 0)
-], BookController.prototype, "findAll", null);
+], BookController.prototype, "findAllWithPagination", null);
 __decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'find top books' }),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
     (0, role_decorator_1.Roles)(users_role_enum_1.UsersRole.SUPERADMIN, users_role_enum_1.UsersRole.ADMIN, users_role_enum_1.UsersRole.LIBRARIAN, users_role_enum_1.UsersRole.READER),
     (0, common_1.Get)('stats/top-books'),
@@ -122,6 +139,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], BookController.prototype, "findTopBooks", null);
 __decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'find one books by id' }),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
     (0, role_decorator_1.Roles)(users_role_enum_1.UsersRole.SUPERADMIN, users_role_enum_1.UsersRole.ADMIN, users_role_enum_1.UsersRole.LIBRARIAN, users_role_enum_1.UsersRole.READER),
     (0, common_1.Get)(':id'),
@@ -131,6 +149,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], BookController.prototype, "findOne", null);
 __decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'update book' }),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
     (0, role_decorator_1.Roles)(users_role_enum_1.UsersRole.SUPERADMIN, users_role_enum_1.UsersRole.ADMIN, users_role_enum_1.UsersRole.LIBRARIAN),
     (0, common_1.Patch)(':id'),
@@ -141,6 +160,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], BookController.prototype, "update", null);
 __decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'delete book' }),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
     (0, role_decorator_1.Roles)(users_role_enum_1.UsersRole.SUPERADMIN, users_role_enum_1.UsersRole.ADMIN, users_role_enum_1.UsersRole.LIBRARIAN),
     (0, common_1.Delete)(':id'),

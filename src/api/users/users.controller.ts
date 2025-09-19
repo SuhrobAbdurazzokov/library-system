@@ -11,6 +11,7 @@ import {
   ParseUUIDPipe,
   Query,
   BadRequestException,
+  Req,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -25,11 +26,13 @@ import { SignInDto } from 'src/api/users/dto/signin.dto';
 import { SignUpDto } from './dto/signup.dto';
 import { QueryDto } from 'src/common/dto/query.dto';
 import { ILike } from 'typeorm';
+import { Users } from 'src/core/entity/users.entity';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @ApiOperation({ summary: 'create admin and librarian' })
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UsersRole.ADMIN, UsersRole.SUPERADMIN)
   @ApiBearerAuth()
@@ -38,6 +41,7 @@ export class UsersController {
     return this.usersService.createUser(createUserDto);
   }
 
+  @ApiOperation({ summary: 'signup (register) for reader' })
   @Post('signup')
   signUp(
     @Body() signUpDto: SignUpDto,
@@ -46,6 +50,7 @@ export class UsersController {
     return this.usersService.signUp(signUpDto, res);
   }
 
+  @ApiOperation({ summary: 'login users' })
   @Post('login')
   login(
     @Body() signInDto: SignInDto,
@@ -54,65 +59,26 @@ export class UsersController {
     return this.usersService.login(signInDto, res);
   }
 
+  @ApiOperation({ summary: 'find all users with filter' })
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UsersRole.ADMIN, UsersRole.SUPERADMIN)
   @ApiBearerAuth()
   @Get()
-  findAll() {
-    return this.usersService.findAll({
-      select: {
-        id: true,
-
-        fullName: true,
-        email: true,
-        role: true,
-      },
-      order: { createdAt: 'DESC' },
-    });
+  async findAllWithRoleFilter(@Req() req: any, @Query() queryDto: QueryDto) {
+    const currentUser = req.user as Users;
+    return this.usersService.findAllWithRoleFilter(currentUser, queryDto);
   }
 
-  @ApiOperation({ summary: 'find all users with filter' })
+  @ApiOperation({ summary: 'find top users' })
   @UseGuards(AuthGuard, RolesGuard)
-  @Roles(UsersRole.ADMIN, UsersRole.SUPERADMIN, UsersRole.LIBRARIAN)
-  @Get('top-users')
-  findTopUsers() {
+  @Roles(UsersRole.ADMIN, UsersRole.SUPERADMIN, UsersRole.LIBRARIAN, 'ID')
+  @ApiBearerAuth()
+  @Get('stats/top-users')
+  findTopUser() {
     return this.usersService.findTopUsers();
   }
 
-  @UseGuards(AuthGuard, RolesGuard)
-  @Roles(UsersRole.ADMIN, UsersRole.SUPERADMIN)
-  @ApiBearerAuth()
-  @Get('filter')
-  findAllWithFilter(@Query() queryDto: QueryDto) {
-    const { query, search } = queryDto;
-
-    const allowedFields = ['email', 'fullName', 'role'];
-
-    if (search && !allowedFields.includes(search)) {
-      throw new BadRequestException(
-        ` Search field "${search}" mavjud emas. Mavjud fields: ${allowedFields.join(', ')},`,
-      );
-    }
-
-    let where = {};
-    if (query && search) {
-      where = {
-        [search]: ILike(`%${query}%`),
-      };
-    }
-
-    return this.usersService.findAll({
-      where,
-      select: {
-        id: true,
-        fullName: true,
-        email: true,
-        role: true,
-      },
-      order: { createdAt: 'DESC' },
-    });
-  }
-
+  @ApiOperation({ summary: 'find one user by id' })
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UsersRole.ADMIN, UsersRole.SUPERADMIN, 'ID')
   @ApiBearerAuth()
@@ -129,6 +95,7 @@ export class UsersController {
     });
   }
 
+  @ApiOperation({ summary: 'update user' })
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UsersRole.ADMIN, UsersRole.SUPERADMIN, 'ID')
   @ApiBearerAuth()
@@ -140,6 +107,7 @@ export class UsersController {
     return this.usersService.updateUser(id, updateUserDto);
   }
 
+  @ApiOperation({ summary: 'delete user' })
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UsersRole.ADMIN, UsersRole.SUPERADMIN, 'ID')
   @ApiBearerAuth()

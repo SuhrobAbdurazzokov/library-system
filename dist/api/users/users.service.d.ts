@@ -10,6 +10,7 @@ import { TokenService } from 'src/common/token/token';
 import { Response } from 'express';
 import { SignUpDto } from './dto/signup.dto';
 import type { BorrowRepository } from 'src/core/repository/borrow.repository';
+import { QueryDto } from 'src/common/dto/query.dto';
 export declare class UsersService extends BaseService<CreateUserDto, UpdateUserDto, Users> implements OnModuleInit {
     private readonly usersRepo;
     private readonly borrowRepo;
@@ -21,5 +22,6 @@ export declare class UsersService extends BaseService<CreateUserDto, UpdateUserD
     signUp(signUpDto: SignUpDto, res: Response): Promise<import("../../infrastructure/interface/resonse.interface").IResponse>;
     updateUser(id: string, updateUserDto: UpdateUserDto): Promise<import("../../infrastructure/interface/resonse.interface").IResponse>;
     login(signInDto: SignInDto, res: Response): Promise<import("../../infrastructure/interface/resonse.interface").IResponse>;
+    findAllWithRoleFilter(currentUser: Users, queryDto?: QueryDto): Promise<Users[]>;
     findTopUsers(): Promise<any[]>;
 }

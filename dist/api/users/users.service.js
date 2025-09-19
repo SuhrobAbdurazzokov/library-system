@@ -23,6 +23,7 @@ const crypto_1 = require("../../common/bcrypt/crypto");
 const config_1 = require("../../config");
 const token_1 = require("../../common/token/token");
 const borrow_entity_1 = require("../../core/entity/borrow.entity");
+const typeorm_2 = require("typeorm");
 let UsersService = class UsersService extends base_service_1.BaseService {
     usersRepo;
     borrowRepo;
@@ -121,6 +122,50 @@ let UsersService = class UsersService extends base_service_1.BaseService {
         const refreshToken = await this.token.refreshToken(payload);
         await this.token.writeToCookie(res, 'userToken', refreshToken, 15);
         return (0, get_success_res_1.getSuccessRes)({ accessToken });
+    }
+    async findAllWithRoleFilter(currentUser, queryDto) {
+        const { query, search } = queryDto || {};
+        const allowedFields = ['email', 'fullName', 'role'];
+        if (search && !allowedFields.includes(search)) {
+            throw new common_1.BadRequestException(`Search field "${search}" mavjud emas. Mavajud fiedls: ${allowedFields.join(', ')}`);
+        }
+        let where = {};
+        if (currentUser.role === users_role_enum_1.UsersRole.SUPERADMIN) {
+        }
+        else if (currentUser.role === users_role_enum_1.UsersRole.ADMIN) {
+            where.role = users_role_enum_1.UsersRole.LIBRARIAN;
+        }
+        else if (currentUser.role === users_role_enum_1.UsersRole.LIBRARIAN) {
+            where.role = users_role_enum_1.UsersRole.READER;
+        }
+        if (query && search) {
+            if (search === 'role') {
+                const normalizedRole = query.toUpperCase();
+                if (!Object.values(users_role_enum_1.UsersRole).includes(normalizedRole)) {
+                    throw new common_1.BadRequestException(`Bunday role "${query}" mavjud emas. Mavjud fields: ${Object.values(users_role_enum_1.UsersRole).join(', ')}`);
+                }
+                where = {
+                    ...where,
+                    role: normalizedRole,
+                };
+            }
+            else {
+                where = {
+                    ...where,
+                    [search]: (0, typeorm_2.ILike)(`%${query}%`),
+                };
+            }
+        }
+        return this.usersRepo.find({
+            where,
+            select: {
+                id: true,
+                fullName: true,
+                email: true,
+                role: true,
+            },
+            order: { createdAt: 'DESC' },
+        });
     }
     async findTopUsers() {
         return this.borrowRepo

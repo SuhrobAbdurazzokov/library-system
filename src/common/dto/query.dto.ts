@@ -4,8 +4,8 @@ import { IsOptional, IsString } from 'class-validator';
 export class QueryDto {
   @ApiProperty({
     type: 'string',
-    example: 'Abdulla Qodiriy',
-    description: 'nimani qidirayotganiz :',
+    description: 'row',
+    required: false,
   })
   @IsString()
   @IsOptional()
@@ -13,10 +13,10 @@ export class QueryDto {
 
   @ApiProperty({
     type: 'string',
-    example: 'Author',
-    description: "nimasi bo'yicha qidirayotganiz (author, title va h.k):",
+    description: 'column',
+    required: false,
   })
   @IsString()
   @IsOptional()
-  search: string;
+  search?: string;
 }

@@ -17,9 +17,9 @@ export class AllExceptionFilter implements ExceptionFilter {
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
     let errorMessage = 'Internal server error';
+
     if (exception instanceof HttpException) {
       const exceptionResponse = exception.getResponse();
-      console.log('Serverda xatolik:\n', exceptionResponse);
       if (typeof exceptionResponse === 'string') {
         errorMessage = exceptionResponse;
       } else if (

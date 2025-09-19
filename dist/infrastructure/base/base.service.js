@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.BaseService = void 0;
 const common_1 = require("@nestjs/common");
 const get_success_res_1 = require("../../common/util/get-success-res");
+const repositoryPager_1 = require("../pagination/repositoryPager");
 class BaseService {
     repository;
     constructor(repository) {
@@ -19,6 +20,9 @@ class BaseService {
     async findAll(where) {
         const data = await this.repository.find(where);
         return (0, get_success_res_1.getSuccessRes)(data);
+    }
+    async findAllWithPagination(options) {
+        return await repositoryPager_1.RepositoryPager.findAll(this.getRepository, options);
     }
     async findOneById(id, options) {
         const data = await this.repository.findOne({
